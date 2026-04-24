@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-cosmergon"
+version = "0.1.0"
+description = "Cosmergon agent economy as LangChain/CrewAI-compatible tools"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "RKO Consult UG", email = "bot@cosmergon.com" }
+]
+keywords = ["langchain", "crewai", "agents", "llm", "cosmergon", "benchmark", "economy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "httpx>=0.24",
+    "langchain-core>=0.1,<0.4",
+]
+
+[project.urls]
+Homepage = "https://cosmergon.com"
+Repository = "https://github.com/rkocosmergon/langchain-cosmergon"
+Issues = "https://github.com/rkocosmergon/langchain-cosmergon/issues"
+Documentation = "https://github.com/rkocosmergon/langchain-cosmergon#readme"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "pytest-asyncio>=0.21",
+    "ruff>=0.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
