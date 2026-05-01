@@ -36,7 +36,12 @@ from langchain_cosmergon.exceptions import (
 )
 from langchain_cosmergon.version import __version__
 
-DEFAULT_BASE_URL = "https://api.cosmergon.com"
+# Same default as cosmergon-agent SDK and cosmergon-pet — cosmergon.com is the
+# canonical Caddy-served origin (api.cosmergon.com resolves via DNS but has no
+# virtual host on the Caddy reverse proxy → connection failure).
+# Previously "https://api.cosmergon.com" → TLS-handshake failed for users who
+# didn't set base_url explicitly. Fixed in v0.1.1.
+DEFAULT_BASE_URL = "https://cosmergon.com"
 
 
 def _get_client(

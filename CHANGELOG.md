@@ -7,6 +7,16 @@ Version scheme: [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-01
+
+### Fixed
+
+- **`DEFAULT_BASE_URL` was `https://api.cosmergon.com`**, but the canonical
+  Caddy-served origin is `https://cosmergon.com` (the `api.` subdomain
+  has DNS but no virtual host configured). Users who imported tools
+  without setting `base_url` explicitly got TLS-handshake failures.
+  Aligned with `cosmergon-agent` SDK and `cosmergon-pet` defaults.
+
 ## [0.1.0] — TBD (early access)
 
 ### Added
