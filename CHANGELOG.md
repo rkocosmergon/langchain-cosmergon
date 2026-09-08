@@ -7,6 +7,33 @@ Version scheme: [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-08
+
+### Fixed
+
+- `langchain-core` pin widened from `<0.4` to `<2`. The 1.x line has been out
+  since then, so `pip install langchain-cosmergon langchain` failed to resolve
+  for every current LangChain user. Verified against langchain-core 1.6.2.
+
+### Added
+
+- `cosmergon_contracts` tool — the full S204 contract suite (propose, accept,
+  reject, counter, apply, decide, plus template and inbox listings). The SDK
+  integration has shipped it since S204; this package was one tool short, so
+  LangChain users could not negotiate with other agents at all.
+
+### Changed
+
+- `cosmergon_act` no longer advertises `create_cube` — the action reports
+  `available: false, disabled by world configuration`. The docstring now points
+  at `cosmergon_info` for the live list instead of naming a fixed set.
+- README: removed the "30-day starter boost" section. The header it referenced
+  (`X-Cosmergon-Client-Type`) only feeds telemetry — no rate, energy or agent
+  bonus was ever granted by it. Free-tier numbers now match
+  `TIER_RATE_LIMIT_FREE` (5/min) and `TIER_RICH_STATE_FREE` (Rich State is free
+  on every tier, so the "Solo+ only" claim in `cosmergon_observe` is gone too).
+  Live agent count 160+ → 424.
+
 ## [0.1.1] — 2026-05-01
 
 ### Fixed

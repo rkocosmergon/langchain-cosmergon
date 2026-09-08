@@ -171,8 +171,8 @@ def _make_observe_tool(tool_decorator: Any, client: httpx.Client, agent_id: str)
         """Get your Cosmergon agent's current game state.
 
         Args:
-            detail: "summary" (basic) or "rich" (full context — requires
-              Solo+ tier or active LangChain starter-tier).
+            detail: "summary" (basic) or "rich" (full context — available
+              on every tier, including free).
         """
         resp = client.get(f"/api/v1/agents/{agent_id}/state", params={"detail": detail})
         return json.dumps(_handle_response(resp), indent=2)
@@ -186,8 +186,11 @@ def _make_act_tool(tool_decorator: Any, client: httpx.Client, agent_id: str) -> 
         """Execute a Cosmergon game action.
 
         Args:
-            action: e.g. ``place_cells``, ``create_field``, ``create_cube``,
-              ``evolve``, ``transfer_energy``, ``market_list``, ``market_buy``.
+            action: e.g. ``place_cells``, ``create_field``, ``evolve``,
+              ``transfer_energy``, ``market_list``, ``market_buy``,
+              ``start_mission``. Call ``cosmergon_info`` for the live list —
+              actions carry an ``available`` flag and can be turned off by
+              world configuration.
             params: JSON string of action-specific parameters.
         """
         try:
@@ -241,6 +244,69 @@ def _make_info_tool(tool_decorator: Any, client: httpx.Client) -> Any:
     return cosmergon_info
 
 
+def _make_contracts_tool(tool_decorator: Any, client: httpx.Client, agent_id: str) -> Any:
+    """S204 — the full contract suite (propose/accept/reject/counter/apply/decide).
+
+    Kept in sync with ``cosmergon_agent.integrations.langchain``; contracts are
+    the mechanic where agents negotiate with each other, so a tool list without
+    them hides half the game.
+    """
+
+    @tool_decorator
+    def cosmergon_contracts(operation: str, params: str = "{}") -> str:
+        """Cosmergon contract operations.
+
+        Args:
+            operation: One of:
+                'list_templates' (no params) — the T01-T10 standard templates
+                'list_pending' (no params) — proposals addressed to me
+                'propose_from_template' {template_id, slots, mode?='targeted', escrow?=0}
+                'propose' {to_player_id, contract_type, terms, escrow_amount?=0}
+                'accept' {contract_id, escrow_amount?=0}
+                'reject' {contract_id, reason?=null}
+                'counter' {contract_id, slots, escrow?=0} — max 3 rounds
+                'breach' {contract_id} — loses escrow
+                'apply' {contract_id, counter_slots?=null} — open-call apply
+                'decide' {contract_id, application_id, decision, reason?=null}
+            params: JSON string with the operation-specific args.
+        """
+        try:
+            p = json.loads(params) if params else {}
+        except json.JSONDecodeError as exc:
+            raise InvalidActionError(f"`params` must be valid JSON. Got: {params[:100]}") from exc
+
+        if operation == "list_templates":
+            return json.dumps(
+                _handle_response(client.get("/api/v1/contracts/templates")), indent=2
+            )
+        if operation == "list_pending":
+            state = _handle_response(client.get(f"/api/v1/agents/{agent_id}/state"))
+            return json.dumps(state.get("contracts", {}).get("pending_inbound", []) or [], indent=2)
+
+        action_map = {
+            "propose": "propose_contract",
+            "propose_from_template": "propose_from_template",
+            "accept": "accept_contract",
+            "reject": "reject_contract",
+            "counter": "propose_counter",
+            "breach": "breach_contract",
+            "apply": "apply_to_contract",
+            "decide": "decide_application",
+        }
+        action = action_map.get(operation)
+        if not action:
+            bekannt = sorted([*action_map, "list_templates", "list_pending"])
+            raise InvalidActionError(f"unknown operation '{operation}'. Known: {bekannt}")
+        resp = client.post(
+            f"/api/v1/agents/{agent_id}/action",
+            json={"action": action, **p},
+            headers={"X-Idempotency-Key": str(uuid.uuid4())},
+        )
+        return json.dumps(_handle_response(resp), indent=2)
+
+    return cosmergon_contracts
+
+
 def cosmergon_tools(
     api_key: str | None = None,
     player_token: str | None = None,
@@ -285,4 +351,5 @@ def cosmergon_tools(
         _make_act_tool(tool, client, agent_id),
         _make_benchmark_tool(tool, client, agent_id),
         _make_info_tool(tool, client),
+        _make_contracts_tool(tool, client, agent_id),
     ]
