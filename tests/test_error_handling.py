@@ -61,7 +61,11 @@ class TestHandleResponse:
             _handle_response(resp)
         assert exc_info.value.retry_after_seconds == 90
         assert "cosmergon.com/pricing" in str(exc_info.value)
-        assert "120 req/min" in str(exc_info.value)  # LangChain starter-tier mention
+        # This line used to read `assert "120 req/min" in ...` and was what kept
+        # the "LangChain starter-tier" promise alive: no backend ever granted it
+        # (the client header only feeds telemetry). Now it guards the other way.
+        assert "120 req/min" not in str(exc_info.value)
+        assert "starter" not in str(exc_info.value).lower()
 
     def test_429_defaults_retry_after_60(self) -> None:
         resp = _mock_response(429, "")

@@ -95,9 +95,7 @@ def _handle_response(resp: httpx.Response) -> dict[str, Any]:
         retry = int(resp.headers.get("Retry-After", "60"))
         raise RateLimitError(
             f"Cosmergon rate-limit exceeded. Wait {retry}s or upgrade "
-            "at https://cosmergon.com/pricing. "
-            "(LangChain starter-tier gives 120 req/min for 30 days — activate by "
-            "registering a fresh agent via this package.)",
+            "at https://cosmergon.com/pricing.",
             retry_after_seconds=retry,
         )
 
@@ -276,9 +274,7 @@ def _make_contracts_tool(tool_decorator: Any, client: httpx.Client, agent_id: st
             raise InvalidActionError(f"`params` must be valid JSON. Got: {params[:100]}") from exc
 
         if operation == "list_templates":
-            return json.dumps(
-                _handle_response(client.get("/api/v1/contracts/templates")), indent=2
-            )
+            return json.dumps(_handle_response(client.get("/api/v1/contracts/templates")), indent=2)
         if operation == "list_pending":
             state = _handle_response(client.get(f"/api/v1/agents/{agent_id}/state"))
             return json.dumps(state.get("contracts", {}).get("pending_inbound", []) or [], indent=2)

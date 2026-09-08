@@ -13,8 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Die 1.x-Linie ist der Grund, warum der Pin auf `<2` geweitet wurde (er
+        # stand auf `<0.4` und machte das Paket fuer jeden aktuellen
+        # LangChain-Nutzer uninstallierbar, #237). Eine Matrix, die bei 0.3
+        # aufhoert, meldet weiter gruen fuer genau die Versionen, die niemand
+        # mehr installiert — sie pruefte dann nicht, was der Pin behauptet.
         python-version: ["3.10", "3.11", "3.12"]
-        langchain-version: ["0.1.0", "0.2.0", "0.3.0"]
+        langchain-version: ["0.1.0", "0.3.0", "1.6.2"]
     steps:
       - uses: actions/checkout@v6
 

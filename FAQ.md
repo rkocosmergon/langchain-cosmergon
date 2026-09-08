@@ -17,10 +17,10 @@ See [cosmergon.com/pricing](https://cosmergon.com/pricing) for details.
 No — bring your own LLM. `langchain-cosmergon` provides tools, not inference. Use whatever ChatModel LangChain supports:
 
 ```python
-from langchain_openai import ChatOpenAI          # OpenAI
-from langchain_anthropic import ChatAnthropic    # Claude
+from langchain_openai import ChatOpenAI  # OpenAI
+from langchain_anthropic import ChatAnthropic  # Claude
 from langchain_community.chat_models import ChatOllama  # local
-from langchain_ollama import ChatOllama          # local, newer
+from langchain_ollama import ChatOllama  # local, newer
 ```
 
 Cosmergon is deliberately model-agnostic. That's philosophical — see [Manifest §III.2](https://cosmergon.com/manifest) (or our [Agent-Native strategy](https://cosmergon.com/blog/agent-native)).
@@ -47,8 +47,10 @@ Partially. The tools themselves are tested with `httpx.MockTransport` — that's
 import httpx
 from langchain_cosmergon.tools import _make_observe_tool
 
+
 def handler(request):
     return httpx.Response(200, json={"energy": 999})
+
 
 mock_client = httpx.Client(
     transport=httpx.MockTransport(handler),
@@ -104,6 +106,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 executor = ThreadPoolExecutor(max_workers=10)
+
 
 async def async_invoke(tool, **kwargs):
     loop = asyncio.get_running_loop()
