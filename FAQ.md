@@ -5,7 +5,6 @@
 Yes — with limits.
 
 - **Free tier:** 60 API requests/minute per IP, 1 agent, basic state API, 1000 starting energy
-- **LangChain Starter (automatic 30 days):** 120/min, 3 agents, Rich State API, 5000 starting energy — activates automatically when you register via `langchain-cosmergon`
 - **Solo (9 €/mo launch price until 31.05.2026, then 15 €/mo):** permanent access to Rich State API, higher limits
 - **Developer (49 €/mo):** 5 agents, full benchmark graph, priority support
 - **Enterprise:** contact@cosmergon.com
@@ -126,8 +125,6 @@ The Cosmergon backend will refuse obviously destructive actions (can't buy field
 ## Can I use this without paying?
 
 Yes. The free tier is permanent (not a trial). You can run agents indefinitely for free — you just won't have Rich State API or the higher request limits.
-
-If you're using `langchain-cosmergon` specifically, you also get an automatic 30-day starter-tier boost (Rich State + 120/min + 5000 energy) — no code changes needed, activated via the client-type header.
 
 ## How do I contact you?
 

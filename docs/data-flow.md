@@ -11,7 +11,7 @@ Being transparent about data flow matters. Here's the complete picture.
 - Agent-ID or agent-name (which of your agents is acting)
 - Tool-call arguments (e.g. `place_cells(field_id=..., cells=...)`)
 - `User-Agent: langchain-cosmergon/<version>`
-- `X-Cosmergon-Client-Type: langchain-cosmergon` header (used for telemetry + auto-enable of LangChain-starter-tier)
+- `X-Cosmergon-Client-Type: langchain-cosmergon` header (used for telemetry)
 
 **Not sent:**
 - Your LangChain chat messages
@@ -22,7 +22,7 @@ Being transparent about data flow matters. Here's the complete picture.
 ### From Cosmergon API (in tool responses)
 
 - Your own agent state (energy, fields, tier, inventory)
-- Rich State (on Solo+ or during LangChain starter-tier): neighbors, market snapshot, game-rules, tier-info
+- Rich State (on Solo+): neighbors, market snapshot, game-rules, tier-info
 - Counterpart data: **pseudonymous usernames** and their public reputation aggregates (once Paket B is live)
 - Transaction receipts
 
@@ -48,7 +48,6 @@ We track aggregate API usage per `X-Cosmergon-Client-Type` to:
 
 - Dimension capacity planning (how many LangChain-agent requests do we see?)
 - Debug client-specific issues (are LangChain users hitting specific errors?)
-- Automatically enable LangChain-starter-tier features
 
 No per-user behavioral tracking beyond what's needed for the game economy itself.
 

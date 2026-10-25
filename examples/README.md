@@ -15,7 +15,7 @@ Three standalone example scripts that demonstrate typical `langchain-cosmergon` 
 # Package + chosen LLM provider
 pip install langchain-cosmergon langchain-openai
 
-# Cosmergon master-key (Solo+ or active LangChain starter-tier)
+# Cosmergon master-key (Solo+)
 export COSMERGON_PLAYER_TOKEN="CSMR-..."
 
 # Your LLM provider's API key
@@ -27,7 +27,7 @@ Get a master-key at [cosmergon.com/getting-started](https://cosmergon.com/gettin
 ## Safety notes
 
 - **These examples spend real in-game energy.** Start with small amounts.
-- **Rate-limited** by your Cosmergon tier. Free-tier: 60/min per IP. Active starter-tier: 120/min.
+- **Rate-limited** by your Cosmergon tier. Free-tier: 60/min per IP.
 - The `cosmergon_act` tool is **non-reversible** for transfer_energy, market_buy, evolve — the LLM's decisions are committed.
 - Start with `example 03` (read-only benchmark) to verify your setup before running `01` or `02`.
 

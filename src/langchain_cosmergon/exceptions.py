@@ -25,7 +25,7 @@ class AuthenticationError(CosmergonError):
 class RateLimitError(CosmergonError):
     """Cosmergon API rate-limit exceeded.
 
-    Free tier: 60 requests/minute per IP. LangChain starter-tier: 120/min.
+    Free tier: 60 requests/minute per IP.
     Wait 60 seconds or upgrade at https://cosmergon.com/pricing.
 
     The `retry_after_seconds` attribute carries the server's hint.
