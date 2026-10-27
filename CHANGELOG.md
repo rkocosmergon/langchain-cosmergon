@@ -7,6 +7,21 @@ Version scheme: [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-10-27
+
+### Fixed
+
+- **The master key works.** In `player_token` mode the key is exchanged for the named
+  agent's api-key at `GET /api/v1/players/me/agents`, as the Cosmergon SDK does. The header
+  sent before is not read by the server; the mode failed with 401 on every account. An
+  unknown `agent_name` raises `ConfigurationError` (cos20 #587).
+- **`cosmergon_contracts` sends the mapped operation.** An `action` key in the parameters
+  replaced it.
+- **The examples and the README quickstart run the tool calls** the model asks for
+  (`bind_tools` only returns them), at most five rounds. Example 03 reads the report fields
+  the server sends.
+- **`publish.yml` installs twine** for its `twine check` step.
+
 ## [0.2.0] — 2026-09-08
 
 ### Fixed
