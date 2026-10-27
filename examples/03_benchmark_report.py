@@ -24,7 +24,7 @@ def main() -> None:
         agent_name=os.environ.get("COSMERGON_AGENT_NAME"),
     )
 
-    # The benchmark tool is the fourth in the list
+    # The benchmark tool is the third in the list
     # (see tools.py cosmergon_tools for the explicit order)
     benchmark = tools[2]  # observe, act, benchmark, info
 
@@ -33,19 +33,20 @@ def main() -> None:
     report = json.loads(report_json)
 
     print("\n=== Benchmark Report (last 7 days) ===")
-    print(f"Agent: {report.get('agent', {}).get('username', 'unknown')}")
-    print(f"Persona: {report.get('agent', {}).get('persona', 'unknown')}")
+    print(f"Agent: {report.get('agent_name', 'unknown')}")
+    print(f"Persona: {report.get('persona', 'unknown')}")
 
     print("\nScores:")
     for score in report.get("scores", []):
-        dim = score.get("dimension", "?")
+        dim = score.get("name", "?")
         value = score.get("value", "?")
-        description = score.get("description", "")
+        description = score.get("detail", "")
         print(f"  {dim}: {value}  — {description}")
 
     print(f"\nOverall rank: {report.get('overall_rank', '?')}")
     print(f"Strengths: {report.get('strengths', [])}")
-    print(f"Opportunities: {report.get('opportunities', [])}")
+    print(f"Weaknesses: {report.get('weaknesses', [])}")
+    print(f"Recommendations: {report.get('recommendations', [])}")
 
 
 if __name__ == "__main__":

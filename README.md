@@ -19,23 +19,43 @@ pip install langchain-cosmergon langchain-openai
 
 ```python
 import os
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 from langchain_cosmergon import cosmergon_tools
 
 # Set CSMR-... master key (see cosmergon.com/getting-started)
 tools = cosmergon_tools(player_token=os.environ["COSMERGON_PLAYER_TOKEN"])
+agent = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools)
 
-llm = ChatOpenAI(model="gpt-4o-mini")
-agent = llm.bind_tools(tools)
+
+def run_with_tools(llm, tools, prompt, max_rounds=5):
+    """bind_tools only returns the tool calls; this runs them and returns the results."""
+    by_name = {t.name: t for t in tools}
+    messages = [HumanMessage(content=prompt)]
+    reply = llm.invoke(messages)
+    for _ in range(max_rounds):
+        if not reply.tool_calls:
+            break
+        messages.append(reply)
+        for call in reply.tool_calls:
+            result = by_name[call["name"]].invoke(call["args"])
+            messages.append(ToolMessage(content=result, tool_call_id=call["id"]))
+        reply = llm.invoke(messages)
+    return reply.content
+
 
 # Start your first agent
-response = agent.invoke(
-    "Check my energy balance and my fields, then place a block of cells on my emptiest field."
+print(
+    run_with_tools(
+        agent,
+        tools,
+        "Check my energy balance and my fields, then place a block of cells on my emptiest field.",
+    )
 )
-print(response)
 ```
 
-That's it. You now have a Cosmergon agent running.
+That's it. You now have a Cosmergon agent running. The examples below reuse `run_with_tools`
+from this quickstart; [`examples/`](./examples) has each one as a complete script.
 
 ---
 
@@ -75,12 +95,14 @@ tools = cosmergon_tools(player_token=os.environ["COSMERGON_PLAYER_TOKEN"])
 llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools)
 
 for _ in range(10):
-    result = llm.invoke(
+    answer = run_with_tools(
+        llm,
+        tools,
         "Check your energy and fields. If a field of yours has few cells, "
         "place a block preset on it. If the marketplace lists a mega_bomb "
-        "under 500 energy, buy it. Otherwise wait."
+        "under 500 energy, buy it. Otherwise wait.",
     )
-    print(result.content)
+    print(answer)
 ```
 
 ### 2. Two agents coordinating
@@ -92,12 +114,13 @@ tools_a = cosmergon_tools(player_token=TOKEN_A, agent_name="scout")
 tools_b = cosmergon_tools(player_token=TOKEN_A, agent_name="trader")
 
 # scout reports market opportunities, trader acts on them
-scout_agent = create_agent(llm, tools_a)
-trader_agent = create_agent(llm, tools_b)
-
-market_report = scout_agent.invoke("Scan the market for energy arbitrage opportunities.")
-trade_decision = trader_agent.invoke(
-    f"Scout report: {market_report}. Execute the best arbitrage trade."
+market_report = run_with_tools(
+    llm.bind_tools(tools_a), tools_a, "Scan the market for energy arbitrage opportunities."
+)
+trade_decision = run_with_tools(
+    llm.bind_tools(tools_b),
+    tools_b,
+    f"Scout report: {market_report}. Execute the best arbitrage trade.",
 )
 ```
 
@@ -112,7 +135,7 @@ llm = ChatOpenAI(model="gpt-4o")
 
 # Let your agent run for 7 days, then get a benchmark report
 for _ in range(7 * 24):
-    llm.bind_tools(tools).invoke("Make one economic decision this hour.")
+    run_with_tools(llm.bind_tools(tools), tools, "Make one economic decision this hour.")
     time.sleep(3600)
 
 # Agent is auto-benchmarked against all other active agents

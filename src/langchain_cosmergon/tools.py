@@ -44,27 +44,77 @@ from langchain_cosmergon.version import __version__
 DEFAULT_BASE_URL = "https://cosmergon.com"
 
 
-def _get_client(
-    api_key: str | None = None,
-    player_token: str | None = None,
-    base_url: str = DEFAULT_BASE_URL,
-) -> httpx.Client:
-    """Create a sync HTTP client with TLS + SDK identification headers."""
-    headers = {
-        "User-Agent": f"langchain-cosmergon/{__version__}",
-        "X-Cosmergon-Client-Type": f"langchain-cosmergon/{__version__}",
-    }
-    if api_key is not None:
-        headers["Authorization"] = f"api-key {api_key}"
-    elif player_token is not None:
-        headers["X-Cosmergon-Player-Token"] = player_token
-    else:
+def _get_client(api_key: str | None = None, base_url: str = DEFAULT_BASE_URL) -> httpx.Client:
+    """Create a sync HTTP client with TLS + SDK identification headers.
+
+    Every game route takes the agent's API key. A master key is exchanged for one first
+    (``_resolve_master_key``).
+    """
+    if api_key is None:
         raise ConfigurationError(
             "Neither api_key nor player_token provided. "
             "Set COSMERGON_PLAYER_TOKEN env var or pass player_token='CSMR-...' "
             "explicitly. See https://cosmergon.com/getting-started."
         )
+    headers = {
+        "User-Agent": f"langchain-cosmergon/{__version__}",
+        "X-Cosmergon-Client-Type": f"langchain-cosmergon/{__version__}",
+        "Authorization": f"api-key {api_key}",
+    }
     return httpx.Client(base_url=base_url, headers=headers, timeout=30.0, verify=True)
+
+
+def _get(client: httpx.Client, path: str) -> httpx.Response:
+    """GET with the connection failures turned into ``ApiUnavailableError``."""
+    try:
+        return client.get(path)
+    except httpx.ConnectError as exc:
+        raise ApiUnavailableError(
+            f"Could not connect to Cosmergon API at {client.base_url}. "
+            "Check your network connection and https://cosmergon.com/status."
+        ) from exc
+    except httpx.TimeoutException as exc:
+        raise ApiUnavailableError(
+            "Cosmergon API request timed out after 30 seconds. "
+            "Retry or check https://cosmergon.com/status."
+        ) from exc
+
+
+def _resolve_master_key(
+    player_token: str, agent_name: str | None, base_url: str
+) -> tuple[str, str]:
+    """Exchange the master key for one agent's API key and id, as the Cosmergon SDK does.
+
+    The server takes a master key only at ``GET /api/v1/players/me/agents`` under
+    ``X-Player-Token`` and answers with a fresh API key per agent; every other route wants
+    ``Authorization: api-key ...``. Up to 0.2.0 this package sent the master key as
+    ``X-Cosmergon-Player-Token`` to ``/agents/``, a header the server does not read: the
+    master-key mode failed with 401 on every account (cos20 #587).
+    """
+    headers = {
+        "User-Agent": f"langchain-cosmergon/{__version__}",
+        "X-Cosmergon-Client-Type": f"langchain-cosmergon/{__version__}",
+        "X-Player-Token": player_token,
+    }
+    with httpx.Client(base_url=base_url, headers=headers, timeout=30.0, verify=True) as client:
+        data = _handle_response(_get(client, "/api/v1/players/me/agents"))
+    agents = data.get("agents") if isinstance(data, dict) else None
+    if not agents:
+        raise ConfigurationError(
+            "No Cosmergon agents found for this account. "
+            "Register your first agent via the Cosmergon SDK or at "
+            "https://cosmergon.com/getting-started."
+        )
+    chosen = agents[0]  # the oldest, as in the SDK
+    if agent_name:
+        named = [a for a in agents if a.get("agent_name") == agent_name]
+        if not named:
+            raise ConfigurationError(
+                f"Agent '{agent_name}' not found in your account. "
+                f"Available agents: {[a.get('agent_name') for a in agents]}"
+            )
+        chosen = named[0]
+    return str(chosen["api_key"]), str(chosen["agent_id"])
 
 
 def _handle_response(resp: httpx.Response) -> dict[str, Any]:
@@ -123,25 +173,12 @@ def _handle_response(resp: httpx.Response) -> dict[str, Any]:
 
 
 def _resolve_agent_id(client: httpx.Client, agent_name: str | None = None) -> str:
-    """Resolve agent_id from the auth context.
+    """Resolve agent_id from the auth context (api_key mode).
 
-    - If ``agent_name`` given (player_token mode): lookup the specific agent
-    - Otherwise (api_key mode): first agent in the list
+    - If ``agent_name`` given: lookup the specific agent
+    - Otherwise: first agent in the list
     """
-    try:
-        resp = client.get("/api/v1/agents/")
-    except httpx.ConnectError as exc:
-        raise ApiUnavailableError(
-            "Could not connect to Cosmergon API at api.cosmergon.com. "
-            "Check your network connection and https://cosmergon.com/status."
-        ) from exc
-    except httpx.TimeoutException as exc:
-        raise ApiUnavailableError(
-            "Cosmergon API request timed out after 30 seconds. "
-            "Retry or check https://cosmergon.com/status."
-        ) from exc
-
-    data = _handle_response(resp)
+    data = _handle_response(_get(client, "/api/v1/agents/"))
     agents = data if isinstance(data, list) else data.get("agents", [])
 
     if not agents:
@@ -340,8 +377,12 @@ def cosmergon_tools(
             "langchain-core is required. Install with: pip install langchain-core"
         ) from exc
 
-    client = _get_client(api_key=api_key, player_token=player_token, base_url=base_url)
-    agent_id = _resolve_agent_id(client, agent_name=agent_name)
+    if api_key is None and player_token is not None:
+        api_key, agent_id = _resolve_master_key(player_token, agent_name, base_url)
+        client = _get_client(api_key, base_url=base_url)
+    else:
+        client = _get_client(api_key, base_url=base_url)
+        agent_id = _resolve_agent_id(client, agent_name=agent_name)
 
     return [
         _make_observe_tool(tool, client, agent_id),

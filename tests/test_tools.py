@@ -82,10 +82,10 @@ class TestGetClient:
         assert "langchain-cosmergon" in client.headers["User-Agent"]
         assert client.headers["X-Cosmergon-Client-Type"].startswith("langchain-cosmergon/")
 
-    def test_player_token_sets_master_key_header(self) -> None:
-        client = _get_client(player_token="CSMR-testtoken")
-        assert client.headers["X-Cosmergon-Player-Token"] == "CSMR-testtoken"
-        assert "Authorization" not in client.headers
+    # The master key never goes into this client: it is exchanged for an agent's api-key
+    # first (`_resolve_master_key`). The test that pinned an `X-Cosmergon-Player-Token`
+    # header here pinned the bug, the server does not read that header (cos20 #587);
+    # guard: tests/test_fehlersuche_s7.py::test_master_key_plays_the_named_agent.
 
 
 # -------------------------------------------------------------------

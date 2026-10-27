@@ -23,10 +23,34 @@ https://ollama.com/search?c=tools for the current tool-capable list.
 from __future__ import annotations
 
 import os
+from typing import Any
 
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_ollama import ChatOllama
 
 from langchain_cosmergon import cosmergon_tools
+
+MAX_TOOL_ROUNDS = 5
+
+
+def run_with_tools(llm: Any, tools: list[Any], prompt: str) -> str:
+    """Ask the tool-bound model and execute the tool calls it requests.
+
+    ``bind_tools(...).invoke(...)`` only returns the requested calls; something has to run
+    them and hand the results back as ``ToolMessage``. At most ``MAX_TOOL_ROUNDS`` rounds.
+    """
+    by_name = {t.name: t for t in tools}
+    messages: list[Any] = [HumanMessage(content=prompt)]
+    reply = llm.invoke(messages)
+    for _ in range(MAX_TOOL_ROUNDS):
+        if not reply.tool_calls:
+            break
+        messages.append(reply)
+        for call in reply.tool_calls:
+            result = by_name[call["name"]].invoke(call["args"])
+            messages.append(ToolMessage(content=result, tool_call_id=call["id"]))
+        reply = llm.invoke(messages)
+    return str(reply.content)
 
 
 def main() -> None:
@@ -39,14 +63,16 @@ def main() -> None:
         base_url=os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
     ).bind_tools(tools)
 
-    response = llm.invoke(
+    answer = run_with_tools(
+        llm,
+        tools,
         "Check my Cosmergon state. If energy balance is over 1500, "
         "describe what I could do next in 2 sentences. No actions yet — "
-        "just observe."
+        "just observe.",
     )
 
     print("LLM response:")
-    print(response.content if hasattr(response, "content") else response)
+    print(answer)
 
 
 if __name__ == "__main__":
