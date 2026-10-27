@@ -295,7 +295,8 @@ def _make_contracts_tool(tool_decorator: Any, client: httpx.Client, agent_id: st
             raise InvalidActionError(f"unknown operation '{operation}'. Known: {bekannt}")
         resp = client.post(
             f"/api/v1/agents/{agent_id}/action",
-            json={"action": action, **p},
+            # As in the act tool, the mapped action wins over an "action" key (cos20 #587).
+            json={"action": action, **{k: v for k, v in p.items() if k != "action"}},
             headers={"X-Idempotency-Key": str(uuid.uuid4())},
         )
         return json.dumps(_handle_response(resp), indent=2)
