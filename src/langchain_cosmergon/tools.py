@@ -189,12 +189,14 @@ def _resolve_agent_id(client: httpx.Client, agent_name: str | None = None) -> st
         )
 
     if agent_name:
+        # The server answers with ``AgentResponse`` — the key is ``agent_name``
+        # (cos20 #684; ``name``/``username`` never existed there).
         for a in agents:
-            if a.get("name") == agent_name or a.get("username") == agent_name:
+            if a.get("agent_name") == agent_name:
                 return str(a["id"])
         raise ConfigurationError(
             f"Agent '{agent_name}' not found in your account. "
-            f"Available agents: {[a.get('name') for a in agents]}"
+            f"Available agents: {[a.get('agent_name') for a in agents]}"
         )
 
     return str(agents[0]["id"])

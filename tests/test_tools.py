@@ -93,14 +93,27 @@ class TestGetClient:
 # -------------------------------------------------------------------
 
 
+def _agent(agent_id: str, name: str) -> dict:
+    """One entry of ``GET /api/v1/agents/`` in the server's form (``AgentResponse``, cos20 #684).
+
+    The old stubs used ``name`` — a key the server never sends — so the name filter was
+    green here and failed against the real server.
+    """
+    return {
+        "id": agent_id,
+        "agent_name": name,
+        "agent_type": "anonymous_agent",
+        "owner_id": None,
+        "created_at": "2026-11-09T00:00:00+00:00",
+        "last_active": None,
+        "is_active": True,
+    }
+
+
 class TestResolveAgentId:
     def test_single_agent_list_returns_first(self) -> None:
         client = _fake_client(
-            {
-                ("GET", "/api/v1/agents/"): httpx.Response(
-                    200, json=[{"id": AGENT_ID, "name": "scout"}]
-                )
-            }
+            {("GET", "/api/v1/agents/"): httpx.Response(200, json=[_agent(AGENT_ID, "scout")])}
         )
         assert _resolve_agent_id(client) == AGENT_ID
 
@@ -110,8 +123,8 @@ class TestResolveAgentId:
                 ("GET", "/api/v1/agents/"): httpx.Response(
                     200,
                     json=[
-                        {"id": "other-id", "name": "scout"},
-                        {"id": AGENT_ID, "name": "trader"},
+                        _agent("other-id", "scout"),
+                        _agent(AGENT_ID, "trader"),
                     ],
                 )
             }
@@ -126,11 +139,7 @@ class TestResolveAgentId:
 
     def test_agent_name_not_found_raises_with_hint(self) -> None:
         client = _fake_client(
-            {
-                ("GET", "/api/v1/agents/"): httpx.Response(
-                    200, json=[{"id": "id-1", "name": "scout"}]
-                )
-            }
+            {("GET", "/api/v1/agents/"): httpx.Response(200, json=[_agent("id-1", "scout")])}
         )
         with pytest.raises(ConfigurationError) as exc_info:
             _resolve_agent_id(client, agent_name="nonexistent")

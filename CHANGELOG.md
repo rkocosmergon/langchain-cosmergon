@@ -7,6 +7,15 @@ Version scheme: [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-11-09
+
+### Fixed
+
+- **`api_key` together with `agent_name` finds the agent.** The lookup compared `name` and
+  `username`, keys the server never sends; `GET /api/v1/agents/` answers with `agent_name`.
+  Every call with an `agent_name` failed with `Agent 'X' not found … Available agents: [None]`.
+  The test stubs now use the server's answer form, so the test sees what the server sends.
+
 ## [0.2.1] — 2026-10-27
 
 ### Fixed
